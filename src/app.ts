@@ -1,9 +1,8 @@
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
-import { userRoutes } from "./app/modules/user/user.routes";
 import { router } from "./app/routes";
-import { envVars } from "./app/config/env";
 import { globalErrorHandler } from "./app/middlewares/globalErrorHandlers";
+import notFound from "./app/middlewares/notFound";
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -14,4 +13,5 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 app.use(globalErrorHandler);
+app.use(notFound);
 export default app;
