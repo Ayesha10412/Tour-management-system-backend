@@ -2,8 +2,10 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { UserServices } from "./user.service";
+import AppError from "../../errorHelpers/appError";
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    throw new AppError(httpStatus.BAD_REQUEST, "Fake request");
     const user = await UserServices.createUser(req.body);
     res
       .status(httpStatus.CREATED)
