@@ -1,5 +1,5 @@
 import z from "zod";
-import { ROLE } from "./user.interface";
+import { IsActive, ROLE } from "./user.interface";
 
 export const createUserZodSchema = z.object({
   name: z
@@ -19,7 +19,8 @@ export const createUserZodSchema = z.object({
     .regex(
       /^(?:\+8801[3-9]\d{8}|01[3-9]\d{8})$/,
       "Invalid Bangladeshi phone number"
-    ),
+    )
+    .optional(),
   address: z
     .string({ invalid_type_error: "Address must be string" })
     .max(200, { message: "Address can not exceed 200 characters." })
