@@ -6,10 +6,6 @@ import httpStatus from "http-status-codes";
 import { AuthServices } from "./auth.service";
 const credentialsLogin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    //const user = await UserServices.createUser(req.body);
-    // res
-    //   .status(httpStatus.CREATED)
-    //   .json({ message: "User created successfully!!", user });
     const loginInfo = await AuthServices.credentialsLogin(req.body);
     sendResponse(res, {
       success: true,
