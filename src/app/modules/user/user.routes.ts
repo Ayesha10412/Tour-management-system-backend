@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { UserControllers } from "./user.controller";
-import { createUserZodSchema } from "./user.validation";
+import { createUserZodSchema, updateUserZodSchema } from "./user.validation";
 import { validateRequest } from "../../middlewares/validateRequest";
 
 import { checkAuth } from "../../middlewares/checkAuth";
@@ -20,6 +20,7 @@ router.get(
 );
 router.patch(
   "/:id",
+  validateRequest(updateUserZodSchema),
   checkAuth(...Object.values(ROLE)),
   UserControllers.updateUser
 );
