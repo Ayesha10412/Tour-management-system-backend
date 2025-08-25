@@ -20,7 +20,6 @@ const tourSchema = new Schema<ITour>(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
     },
     description: {
@@ -78,4 +77,40 @@ const tourSchema = new Schema<ITour>(
   },
   { timestamps: true, versionKey: false }
 );
+
+tourSchema.pre("save", async function (next) {
+  if (this.isModified("title")) {
+    if (this.title) {
+      const baseSlug = this.title.toLowerCase().split(" ").join("-");
+      let slug = `${baseSlug}`;
+
+      let counter = 0;
+      while (await Tour.exists({ slug })) {
+        slug = `${slug}-${counter++}`; // dhaka-division-2
+      }
+
+      this.slug = slug;
+    }
+  }
+
+  tourSchema.pre("findOneAndUpdate", async function (next) {
+    const tour = this.getUpdate() as Partial<ITour>;
+    if (tour.title) {
+      const baseSlug = tour.title.toLowerCase().split(" ").join("-");
+      let slug = `${baseSlug}`;
+
+      let counter = 0;
+      while (await Tour.exists({ slug })) {
+        slug = `${slug}-${counter++}`; // dhaka-division-2
+      }
+
+      tour.slug = slug;
+    }
+    this.setUpdate(tour);
+    next();
+  });
+
+  next();
+});
+
 export const Tour = model<ITour>("Tour", tourSchema);
