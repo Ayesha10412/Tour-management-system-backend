@@ -13,11 +13,19 @@ router.post(
   validateRequest(createUserZodSchema),
   UserControllers.createUser
 );
+router.get("/me", checkAuth(...Object.values(ROLE)), UserControllers.getMe);
+
 router.get(
   "/all-users",
   checkAuth(ROLE.ADMIN, ROLE.SUPER_ADMIN),
   UserControllers.getAllUsers
 );
+router.get(
+  "/:id",
+  checkAuth(ROLE.ADMIN, ROLE.SUPER_ADMIN),
+  UserControllers.getSingleUser
+);
+
 router.patch(
   "/:id",
   validateRequest(updateUserZodSchema),

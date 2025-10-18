@@ -1,5 +1,9 @@
+import { deleteImageFromCLoudinary } from "../../config/cloudinary.config";
 import { QueryBuilder } from "../../utils/QueryBuilder";
-import { tourSearchableFields } from "./tour.constant";
+import {
+  tourSearchableFields,
+  tourTypeSearchableFields,
+} from "./tour.constant";
 import { ITour, ITourType } from "./tour.interface";
 import { Tour, TourType } from "./tour.model";
 
@@ -9,15 +13,15 @@ const createTour = async (payload: ITour) => {
     throw new Error("A tour with this title already exists.");
   }
 
-  //   const baseSlug = payload.title.toLowerCase().split(" ").join("-");
-  //   let slug = `${baseSlug}`;
+  // const baseSlug = payload.title.toLowerCase().split(" ").join("-")
+  // let slug = `${baseSlug}`
 
-  //   let counter = 0;
-  //   while (await Tour.exists({ slug })) {
-  //     slug = `${slug}-${counter++}`; // dhaka-division-2
-  //   }
+  // let counter = 0;
+  // while (await Tour.exists({ slug })) {
+  //     slug = `${slug}-${counter++}` // dhaka-division-2
+  // }
 
-  //   payload.slug = slug;
+  // payload.slug = slug;
 
   const tour = await Tour.create(payload);
 
@@ -113,7 +117,12 @@ const getAllTours = async (query: Record<string, string>) => {
     meta,
   };
 };
-
+const getSingleTour = async (slug: string) => {
+  const tour = await Tour.findOne({ slug });
+  return {
+    data: tour,
+  };
+};
 const updateTour = async (id: string, payload: Partial<ITour>) => {
   const existingTour = await Tour.findById(id);
 
@@ -121,19 +130,57 @@ const updateTour = async (id: string, payload: Partial<ITour>) => {
     throw new Error("Tour not found.");
   }
 
-  //   if (payload.title) {
-  //     const baseSlug = payload.title.toLowerCase().split(" ").join("-");
-  //     let slug = `${baseSlug}`;
+  // if (payload.title) {
+  //     const baseSlug = payload.title.toLowerCase().split(" ").join("-")
+  //     let slug = `${baseSlug}`
 
   //     let counter = 0;
   //     while (await Tour.exists({ slug })) {
-  //       slug = `${slug}-${counter++}`; // dhaka-division-2
+  //         slug = `${slug}-${counter++}` // dhaka-division-2
   //     }
 
-  //     payload.slug = slug;
-  //   }
+  //     payload.slug = slug
+  // }
+
+  if (
+    payload.images &&
+    payload.images.length > 0 &&
+    existingTour.images &&
+    existingTour.images.length > 0
+  ) {
+    payload.images = [...payload.images, ...existingTour.images];
+  }
+
+  if (
+    payload.deleteImages &&
+    payload.deleteImages.length > 0 &&
+    existingTour.images &&
+    existingTour.images.length > 0
+  ) {
+    const restDBImages = existingTour.images.filter(
+      (imageUrl) => !payload.deleteImages?.includes(imageUrl)
+    );
+
+    const updatedPayloadImages = (payload.images || [])
+      .filter((imageUrl) => !payload.deleteImages?.includes(imageUrl))
+      .filter((imageUrl) => !restDBImages.includes(imageUrl));
+
+    payload.images = [...restDBImages, ...updatedPayloadImages];
+  }
+  console.log("Final payload before update:", payload);
 
   const updatedTour = await Tour.findByIdAndUpdate(id, payload, { new: true });
+
+  if (
+    payload.deleteImages &&
+    payload.deleteImages.length > 0 &&
+    existingTour.images &&
+    existingTour.images.length > 0
+  ) {
+    await Promise.all(
+      payload.deleteImages.map((url) => deleteImageFromCLoudinary(url))
+    );
+  }
 
   return updatedTour;
 };
@@ -141,19 +188,40 @@ const updateTour = async (id: string, payload: Partial<ITour>) => {
 const deleteTour = async (id: string) => {
   return await Tour.findByIdAndDelete(id);
 };
-
 const createTourType = async (payload: ITourType) => {
   const existingTourType = await TourType.findOne({ name: payload.name });
 
   if (existingTourType) {
     throw new Error("Tour type already exists.");
   }
-  console.log("Payload received:", payload);
 
-  return await TourType.create({ name: payload.name });
+  return await TourType.create({ name });
 };
-const getAllTourTypes = async () => {
-  return await TourType.find();
+const getAllTourTypes = async (query: Record<string, string>) => {
+  const queryBuilder = new QueryBuilder(TourType.find(), query);
+
+  const tourTypes = await queryBuilder
+    .search(tourTypeSearchableFields)
+    .filter()
+    .sort()
+    .fields()
+    .paginate();
+
+  const [data, meta] = await Promise.all([
+    tourTypes.build(),
+    queryBuilder.getMeta(),
+  ]);
+
+  return {
+    data,
+    meta,
+  };
+};
+const getSingleTourType = async (id: string) => {
+  const tourType = await TourType.findById(id);
+  return {
+    data: tourType,
+  };
 };
 const updateTourType = async (id: string, payload: ITourType) => {
   const existingTourType = await TourType.findById(id);
@@ -181,6 +249,8 @@ export const TourService = {
   deleteTourType,
   updateTourType,
   getAllTourTypes,
+  getSingleTourType,
+  getSingleTour,
   getAllTours,
   updateTour,
   deleteTour,
